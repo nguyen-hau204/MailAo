@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Email Ảo</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-envelope"></i> Hệ Thống Email Ảo</h1>
+            <p>Tạo email tạm thời để bảo vệ email chính của bạn</p>
+        </header>
+
+        <main>
+            <!-- Phần tạo email mới -->
+            <section class="create-email-section">
+                <div class="card">
+                    <h2><i class="fas fa-plus-circle"></i> Tạo Email Ảo Mới</h2>
+                    <button id="createEmailBtn" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Tạo Email Ngay
+                    </button>
+                </div>
+            </section>
+
+            <!-- Phần hiển thị email hiện tại -->
+            <section id="currentEmailSection" class="current-email-section" style="display: none;">
+                <div class="card">
+                    <h2><i class="fas fa-inbox"></i> Email Hiện Tại</h2>
+                    <div class="email-info">
+                        <div class="email-address">
+                            <label>Địa chỉ email:</label>
+                            <div class="email-display">
+                                <span id="currentEmail"></span>
+                                <button id="copyEmailBtn" class="btn btn-copy">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                        </div>
+                        <div class="email-status">
+                            <div class="status-item">
+                                <label>Trạng thái:</label>
+                                <span id="emailStatus" class="status active">Đang hoạt động</span>
+                            </div>
+                            <div class="status-item">
+                                <label>Hết hạn lúc:</label>
+                                <span id="emailExpiry"></span>
+                            </div>
+                        </div>
+                        <div class="email-actions">
+                            <button id="extendEmailBtn" class="btn btn-secondary">
+                                <i class="fas fa-clock"></i> Gia hạn 10 phút
+                            </button>
+                            <button id="refreshBtn" class="btn btn-info">
+                                <i class="fas fa-sync-alt"></i> Làm mới
+                            </button>
+                            <button id="deleteEmailBtn" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Xóa Email
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Phần hiển thị email đã nhận -->
+            <section id="messagesSection" class="messages-section" style="display: none;">
+                <div class="card">
+                    <div class="messages-header">
+                        <h2><i class="fas fa-envelope-open"></i> Email Đã Nhận</h2>
+                        <span id="messageCount" class="message-count">0 tin nhắn</span>
+                    </div>
+                    <div id="messagesList" class="messages-list">
+                        <div class="no-messages">
+                            <i class="fas fa-inbox"></i>
+                            <p>Chưa có email nào được gửi đến địa chỉ này</p>
+                            <p>Email sẽ tự động xuất hiện khi có người gửi</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Modal hiển thị chi tiết email -->
+            <div id="emailModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 id="modalSubject"></h3>
+                        <button class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="email-meta">
+                            <p><strong>Từ:</strong> <span id="modalFrom"></span></p>
+                            <p><strong>Đến:</strong> <span id="modalTo"></span></p>
+                            <p><strong>Thời gian:</strong> <span id="modalDate"></span></p>
+                        </div>
+                        <div class="email-content">
+                            <div id="modalContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Hệ Thống Email Ảo. Được tạo bởi AI Assistant.</p>
+        </footer>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
