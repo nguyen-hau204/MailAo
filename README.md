@@ -2,6 +2,15 @@
 
 Một hệ thống tạo email tạm thời để bảo vệ email chính của bạn khỏi spam và các dịch vụ không mong muốn.
 
+## 👨‍💻 Giới thiệu tác giả
+
+**NguyenHau** - Developer đứng sau dự án MailAo này. Với đam mê phát triển các ứng dụng web hữu ích, tôi đã tạo ra hệ thống email ảo này để giúp mọi người bảo vệ thông tin cá nhân khi sử dụng internet.
+
+### 🎯 Mục tiêu của dự án
+- Cung cấp giải pháp email tạm thời miễn phí, dễ sử dụng
+- Giúp người dùng tránh spam và bảo vệ email chính
+- Xây dựng một công cụ hữu ích cho cộng đồng developer Việt Nam
+
 ## ✨ Tính Năng
 
 - 🎲 **Tự động tạo email ảo ngẫu nhiên**
