@@ -15,10 +15,54 @@
         </header>
 
         <main>
+            <!-- Phần cài đặt API -->
+            <section class="api-settings-section">
+                <div class="card">
+                    <h2><i class="fas fa-cogs"></i> Cài Đặt API</h2>
+                    <div class="api-controls">
+                        <div class="api-switch">
+                            <label class="switch-label">
+                                <input type="radio" name="apiType" value="local" checked>
+                                <span>Sử dụng API Local</span>
+                            </label>
+                            <label class="switch-label">
+                                <input type="radio" name="apiType" value="tempmail">
+                                <span>Sử dụng Tempmail.id.vn API</span>
+                            </label>
+                        </div>
+                        <div id="tempmailSettings" class="tempmail-settings" style="display: none;">
+                            <div class="token-input">
+                                <label for="apiToken">API Token:</label>
+                                <div class="input-group">
+                                    <input type="password" id="apiToken" placeholder="Nhập API Token từ tempmail.id.vn">
+                                    <button id="saveTokenBtn" class="btn btn-secondary">
+                                        <i class="fas fa-save"></i> Lưu
+                                    </button>
+                                </div>
+                                <small class="help-text">Tạo API Token tại: <a href="https://tempmail.id.vn" target="_blank">tempmail.id.vn</a></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Phần tạo email mới -->
             <section class="create-email-section">
                 <div class="card">
                     <h2><i class="fas fa-plus-circle"></i> Tạo Email Ảo Mới</h2>
+                    <div id="customEmailSection" class="custom-email-section" style="display: none;">
+                        <div class="email-customization">
+                            <div class="input-group">
+                                <input type="text" id="customUser" placeholder="Tên người dùng (tùy chọn)">
+                                <span class="at-symbol">@</span>
+                                <select id="customDomain">
+                                    <option value="tempmail.id.vn">tempmail.id.vn</option>
+                                    <option value="1trick.net">1trick.net</option>
+                                    <option value="nghienplus.io.vn">nghienplus.io.vn</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                     <button id="createEmailBtn" class="btn btn-primary">
                         <i class="fas fa-magic"></i> Tạo Email Ngay
                     </button>
@@ -55,6 +99,9 @@
                             </button>
                             <button id="refreshBtn" class="btn btn-info">
                                 <i class="fas fa-sync-alt"></i> Làm mới
+                            </button>
+                            <button id="netflixCodeBtn" class="btn btn-warning" style="display: none;">
+                                <i class="fab fa-netflix"></i> Lấy Mã Netflix
                             </button>
                             <button id="deleteEmailBtn" class="btn btn-danger">
                                 <i class="fas fa-trash"></i> Xóa Email
