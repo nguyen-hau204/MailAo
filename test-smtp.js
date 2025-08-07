@@ -2,7 +2,8 @@ const nodemailer = require('nodemailer');
 const net = require('net');
 
 // Cấu hình VPS của bạn
-const VPS_IP = 'YOUR_VPS_IP';  // Thay bằng IP VPS thực tế
+const VPS_IP = '8.219.169.133';  // IP VPS thực tế của bạn
+const VPS_DOMAIN = 'nguyenhuuhau.xyz';  // Domain của bạn
 const SMTP_PORT = 2525;
 
 console.log('🧪 Test kết nối SMTP server trên VPS...\n');
