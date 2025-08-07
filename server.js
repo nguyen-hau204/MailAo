@@ -158,6 +158,8 @@ app.get('/api/emails', (req, res) => {
 const smtpServer = new SMTPServer({
     secure: false,
     authOptional: true,
+    disabledCommands: ['AUTH'],
+    logger: false,
     onData(stream, session, callback) {
         let emailData = '';
         
@@ -209,7 +211,18 @@ const smtpServer = new SMTPServer({
     },
     onRcptTo(address, session, callback) {
         console.log('Mail to:', address.address);
+        
+        // Kiểm tra xem email có tồn tại trong hệ thống không
+        const recipientEmail = address.address;
+        if (!receivedEmails.has(recipientEmail)) {
+            console.log(`⚠️ Email ${recipientEmail} không tồn tại trong hệ thống`);
+            // Vẫn cho phép nhận email, chỉ log thông báo
+        }
+        
         callback();
+    },
+    onError(err) {
+        console.error('🚨 Lỗi SMTP server:', err);
     }
 });
 
@@ -230,8 +243,9 @@ app.listen(PORT, () => {
     console.log(`🌐 Web server đang chạy tại http://localhost:${PORT}`);
 });
 
-smtpServer.listen(SMTP_PORT, () => {
-    console.log(`📧 SMTP server đang chạy tại port ${SMTP_PORT}`);
+smtpServer.listen(SMTP_PORT, '0.0.0.0', () => {
+    console.log(`📧 SMTP server đang chạy tại port ${SMTP_PORT} (tất cả interfaces)`);
+    console.log(`📧 SMTP server có thể nhận email từ bên ngoài qua port ${SMTP_PORT}`);
 });
 
 console.log('📮 Hệ thống Email Ảo đã khởi động!');
@@ -241,3 +255,10 @@ console.log('   GET  /api/email/:id - Lấy thông tin email');
 console.log('   GET  /api/email/:id/messages - Lấy tin nhắn đã nhận');
 console.log('   PUT  /api/email/:id/extend - Gia hạn email');
 console.log('   DELETE /api/email/:id - Xóa email');
+console.log('');
+console.log('🔧 Test SMTP từ bên ngoài:');
+console.log(`   telnet YOUR_SERVER_IP ${SMTP_PORT}`);
+console.log('   Hoặc sử dụng tool như swaks:');
+console.log(`   swaks --to test@tempmail.com --from sender@example.com --server YOUR_SERVER_IP:${SMTP_PORT}`);
+console.log('');
+console.log('⚠️  Lưu ý: Đảm bảo port 2525 đã được mở trong firewall và router');
