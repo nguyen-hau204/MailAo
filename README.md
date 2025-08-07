@@ -184,5 +184,4 @@ MIT License - Tự do sử dụng và chỉnh sửa.
 
 ---
 
-**Tạo bởi AI Assistant** 🤖
 // auto deploy test 08/07/2025 10:35:02
