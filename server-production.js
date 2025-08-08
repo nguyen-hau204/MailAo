@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const { v4: uuidv4 } = require('uuid');
 const SMTPServer = require('smtp-server').SMTPServer;
 const { simpleParser } = require('mailparser');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,137 @@ const PUBLIC_IP = '8.219.169.133'; // Your VPS IP
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
+
+// ========= Tempmail.id.vn PROXY (server-side) =========
+const TEMPMail_HOST = 'tempmail.id.vn';
+const TEMPMail_API_BASE = '/api';
+
+function tempmailRequest(path, method = 'GET', data = null, expectText = false) {
+    return new Promise((resolve, reject) => {
+        const payload = data ? JSON.stringify(data) : null;
+        const headers = {
+            'Accept': expectText ? 'text/plain,*/*' : 'application/json',
+            'Authorization': `Bearer ${process.env.TEMPMAIL_API_TOKEN || ''}`,
+        };
+        if (payload) {
+            headers['Content-Type'] = 'application/json';
+            headers['Content-Length'] = Buffer.byteLength(payload);
+        }
+
+        const options = {
+            hostname: TEMPMail_HOST,
+            port: 443,
+            path: `${TEMPMail_API_BASE}${path}`,
+            method,
+            headers,
+        };
+
+        const req = https.request(options, (res) => {
+            let raw = '';
+            res.on('data', (chunk) => (raw += chunk));
+            res.on('end', () => {
+                try {
+                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                        if (expectText) {
+                            return resolve(raw);
+                        }
+                        return resolve(raw ? JSON.parse(raw) : {});
+                    } else {
+                        let errBody = raw;
+                        try { errBody = JSON.parse(raw); } catch (_) {}
+                        reject({ status: res.statusCode, body: errBody });
+                    }
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+
+        req.on('error', reject);
+        if (payload) req.write(payload);
+        req.end();
+    });
+}
+
+app.get('/proxy/tempmail/config', (req, res) => {
+    const enabled = Boolean(process.env.TEMPMAIL_API_TOKEN);
+    res.json({ success: true, enabled });
+});
+
+app.post('/proxy/tempmail/email/create', async (req, res) => {
+    if (!process.env.TEMPMAIL_API_TOKEN) {
+        return res.status(501).json({ success: false, message: 'Tempmail proxy not configured' });
+    }
+    try {
+        const { user = '', domain = 'tempmail.id.vn' } = req.body || {};
+        const result = await tempmailRequest('/email/create', 'POST', { user, domain });
+        res.json({ success: true, data: result });
+    } catch (err) {
+        res.status(err.status || 500).json({ success: false, message: err.body?.message || 'Proxy error', detail: err.body || undefined });
+    }
+});
+
+app.get('/proxy/tempmail/email', async (req, res) => {
+    if (!process.env.TEMPMAIL_API_TOKEN) {
+        return res.status(501).json({ success: false, message: 'Tempmail proxy not configured' });
+    }
+    try {
+        const result = await tempmailRequest('/email', 'GET');
+        res.json({ success: true, data: result });
+    } catch (err) {
+        res.status(err.status || 500).json({ success: false, message: err.body?.message || 'Proxy error', detail: err.body || undefined });
+    }
+});
+
+app.get('/proxy/tempmail/email/:mailId', async (req, res) => {
+    if (!process.env.TEMPMAIL_API_TOKEN) {
+        return res.status(501).json({ success: false, message: 'Tempmail proxy not configured' });
+    }
+    try {
+        const result = await tempmailRequest(`/email/${encodeURIComponent(req.params.mailId)}`, 'GET');
+        res.json({ success: true, data: result });
+    } catch (err) {
+        res.status(err.status || 500).json({ success: false, message: err.body?.message || 'Proxy error', detail: err.body || undefined });
+    }
+});
+
+app.get('/proxy/tempmail/message/:messageId', async (req, res) => {
+    if (!process.env.TEMPMAIL_API_TOKEN) {
+        return res.status(501).send('Tempmail proxy not configured');
+    }
+    try {
+        const content = await tempmailRequest(`/message/${encodeURIComponent(req.params.messageId)}`, 'GET', null, true);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(content);
+    } catch (err) {
+        res.status(err.status || 500).send(typeof err.body === 'string' ? err.body : (err.body?.message || 'Proxy error'));
+    }
+});
+
+app.post('/proxy/tempmail/netflix/get-code', async (req, res) => {
+    if (!process.env.TEMPMAIL_API_TOKEN) {
+        return res.status(501).json({ success: false, message: 'Tempmail proxy not configured' });
+    }
+    try {
+        const { email } = req.body || {};
+        const result = await tempmailRequest('/netflix/get-code', 'POST', { email });
+        res.json({ success: true, data: result });
+    } catch (err) {
+        res.status(err.status || 500).json({ success: false, message: err.body?.message || 'Proxy error', detail: err.body || undefined });
+    }
+});
+
+app.get('/proxy/tempmail/user', async (req, res) => {
+    if (!process.env.TEMPMAIL_API_TOKEN) {
+        return res.status(501).json({ success: false, message: 'Tempmail proxy not configured' });
+    }
+    try {
+        const result = await tempmailRequest('/user', 'GET');
+        res.json({ success: true, data: result });
+    } catch (err) {
+        res.status(err.status || 500).json({ success: false, message: err.body?.message || 'Proxy error', detail: err.body || undefined });
+    }
+});
 
 // Storage
 const tempEmails = new Map();

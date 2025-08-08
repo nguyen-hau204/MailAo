@@ -1,25 +1,40 @@
 // API Client for Tempmail.id.vn
 class TempmailAPI {
     constructor() {
+        // When proxy is enabled, frontend must NOT store or send token
+        this.usesProxy = false;
         this.apiToken = localStorage.getItem('tempmail_api_token') || '';
-        this.baseURL = 'https://tempmail.id.vn/api';
+        this.baseURL = 'https://tempmail.id.vn/api'; // fallback when proxy disabled
         this.currentEmail = null;
     }
 
     setApiToken(token) {
+        // Only used when proxy is disabled
         this.apiToken = token;
         localStorage.setItem('tempmail_api_token', token);
     }
 
+    configureProxy(enabled) {
+        this.usesProxy = enabled;
+        if (enabled) {
+            this.baseURL = '/proxy/tempmail';
+        } else {
+            this.baseURL = 'https://tempmail.id.vn/api';
+        }
+    }
+
     async createEmail(user = '', domain = 'tempmail.id.vn') {
         try {
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            };
+            if (!this.usesProxy) {
+                headers['Authorization'] = `Bearer ${this.apiToken}`;
+            }
             const response = await fetch(`${this.baseURL}/email/create`, {
                 method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiToken}`
-                },
+                headers,
                 body: JSON.stringify({ user, domain })
             });
 
@@ -37,12 +52,13 @@ class TempmailAPI {
 
     async getEmailList() {
         try {
+            const headers = { 'Accept': 'application/json' };
+            if (!this.usesProxy) {
+                headers['Authorization'] = `Bearer ${this.apiToken}`;
+            }
             const response = await fetch(`${this.baseURL}/email`, {
                 method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${this.apiToken}`
-                }
+                headers
             });
 
             const result = await response.json();
@@ -58,12 +74,13 @@ class TempmailAPI {
 
     async getMessages(mailId) {
         try {
+            const headers = { 'Accept': 'application/json' };
+            if (!this.usesProxy) {
+                headers['Authorization'] = `Bearer ${this.apiToken}`;
+            }
             const response = await fetch(`${this.baseURL}/email/${mailId}`, {
                 method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${this.apiToken}`
-                }
+                headers
             });
 
             const result = await response.json();
@@ -79,11 +96,13 @@ class TempmailAPI {
 
     async getMessageContent(messageId) {
         try {
+            const headers = {};
+            if (!this.usesProxy) {
+                headers['Authorization'] = `Bearer ${this.apiToken}`;
+            }
             const response = await fetch(`${this.baseURL}/message/${messageId}`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.apiToken}`
-                }
+                headers
             });
 
             if (response.ok) {
@@ -99,12 +118,13 @@ class TempmailAPI {
 
     async getNetflixCode(email) {
         try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (!this.usesProxy) {
+                headers['Authorization'] = `Bearer ${this.apiToken}`;
+            }
             const response = await fetch(`${this.baseURL}/netflix/get-code`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiToken}`
-                },
+                headers,
                 body: JSON.stringify({ email })
             });
 
@@ -121,12 +141,13 @@ class TempmailAPI {
 
     async getUserInfo() {
         try {
+            const headers = { 'Accept': 'application/json' };
+            if (!this.usesProxy) {
+                headers['Authorization'] = `Bearer ${this.apiToken}`;
+            }
             const response = await fetch(`${this.baseURL}/user`, {
                 method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${this.apiToken}`
-                }
+                headers
             });
 
             const result = await response.json();
@@ -151,8 +172,23 @@ class TempMailSystem {
         this.init();
     }
 
-    init() {
+    async init() {
         this.bindEvents();
+        // Detect if backend proxy is configured to avoid exposing tokens
+        try {
+            const res = await fetch('/proxy/tempmail/config');
+            if (res.ok) {
+                const cfg = await res.json();
+                const enabled = !!cfg.enabled;
+                this.tempmailAPI.configureProxy(enabled);
+                // Update UI visibility depending on proxy
+                const tempmailSettings = document.getElementById('tempmailSettings');
+                if (enabled && tempmailSettings) {
+                    // When proxy is enabled, we don't need to ask for token in UI until user switches to direct API
+                    // Keep hidden by default; it will show when switching to Tempmail API mode
+                }
+            }
+        } catch (_) {}
         // Tự động tạo email khi load trang lần đầu
         // this.createEmail();
     }
@@ -236,7 +272,8 @@ class TempMailSystem {
                 }
             } else {
                 // Sử dụng Tempmail.id.vn API
-                if (!this.tempmailAPI.apiToken) {
+                // If proxy is enabled, no token is needed on the frontend
+                if (!this.tempmailAPI.usesProxy && !this.tempmailAPI.apiToken) {
                     this.showNotification('Vui lòng nhập API Token trước khi sử dụng!', 'error');
                     return;
                 }
@@ -684,15 +721,21 @@ class TempMailSystem {
             customEmailSection.style.display = 'none';
             netflixBtn.style.display = 'none';
         } else {
-            tempmailSettings.style.display = 'block';
+            // When using Tempmail API:
+            // If proxy is enabled, we do NOT need to show token settings
+            if (this.tempmailAPI.usesProxy) {
+                tempmailSettings.style.display = 'none';
+            } else {
+                tempmailSettings.style.display = 'block';
+                // Nạp token đã lưu (nếu có)
+                const savedToken = localStorage.getItem('tempmail_api_token');
+                if (savedToken) {
+                    const tokenEl = document.getElementById('apiToken');
+                    if (tokenEl) tokenEl.value = savedToken;
+                }
+            }
             customEmailSection.style.display = 'block';
             netflixBtn.style.display = 'inline-flex';
-            
-            // Nạp token đã lưu (nếu có)
-            const savedToken = localStorage.getItem('tempmail_api_token');
-            if (savedToken) {
-                document.getElementById('apiToken').value = savedToken;
-            }
         }
         
         this.switchAPI(useLocal);
@@ -714,6 +757,11 @@ class TempMailSystem {
     // Cập nhật createEmail để sử dụng custom user và domain
     async createEmailWithCustom() {
         if (!this.useLocalAPI) {
+            // Using Tempmail (proxy or direct)
+            if (!this.tempmailAPI.usesProxy && !this.tempmailAPI.apiToken) {
+                this.showNotification('Vui lòng nhập API Token!', 'error');
+                return { success: false, message: 'Missing API token' };
+            }
             const customUser = document.getElementById('customUser').value.trim();
             const customDomain = document.getElementById('customDomain').value;
             
